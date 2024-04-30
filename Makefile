@@ -1,16 +1,45 @@
-boot_path = src/boot
+SRC_DIR   	= src
+BUILD_DIR 	= build
+BOOT_PATH 	= boot/boot
+KERNEL_PATH = kernel/kernel
+DISK_IMG    = ${BUILD_DIR}/disk.img
 
-qemu-run: fasm
+
+define qemu
 	qemu-system-x86_64 \
-	-drive format=raw,file=$(boot_path)
+	-drive format=raw,file=${DISK_IMG} \
+	$1
+endef
 
-qemu-gdb: fasm
-	qemu-system-x86_64 \
-	-drive format=raw,file=$(boot_path) \
-	-gdb tcp::3007 -S
+OPT ?= 0
+qemu: dd
+	clear;	
+	if [ $(OPT) = 0 ];\
+	then $(call qemu,);\
+	else $(call qemu,-gdb tcp::3007 -S);\
+	fi	
 
-hd: fasm
-	hd $(boot_path)
+fdisk:
+	clear;\
+	fdisk -l ${DISK_IMG};\
+	echo "\n"; hd ${DISK_IMG};
+
+
+dd: fasm
+	echo "\t__________________";\
+	dd if=/dev/zero of=${DISK_IMG} bs=1M  count=4;\
+	dd if=${BUILD_DIR}/${BOOT_PATH}.o   of=${DISK_IMG} \
+	   bs=512 count=1 seek=0 conv=notrunc;\
+	dd if=${BUILD_DIR}/${KERNEL_PATH}.o of=${DISK_IMG} \
+	   bs=512 count=1 seek=1 conv=notrunc;
+
+
+define fasm
+	fasm2 ${SRC_DIR}/$1.asm ${BUILD_DIR}/$1.o
+endef
 
 fasm:
-	fasm2 $(boot_path).asm $(boot_path)
+	echo "\t------------------";\
+	$(call fasm,${BOOT_PATH});\
+	$(call fasm,${KERNEL_PATH});
+
