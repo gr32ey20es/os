@@ -1,69 +1,30 @@
-org 0x7c00
+;----------------------------------------------------=|
+;           Intel Software Developer's Manual         |
+;                                                     |
+; If you are stuck somewhere, go and read the Manual  |
+; first. This Manual will give you almost all the     |
+; information you need to solve your problems.        |
+;----------------------------------------------------=|
 
-start: jmp bootMain
+org 0x7c00   ; (segment, offset) = (0x0000, 0x7c00) 
+start: jmp boot
 
-bootMain:
-	mov si, msg
-	call biosPrint
-	
-	call kernelRead	
-	
-	jmp protectedSwitch	
+include "bios_print.asm"
+include "disk_load.asm"
+include "protectedMode_switching.asm"
 
-kernelRead:
-	push ax
-	push bx
-	push cx
-	push es
+use16
+boot:
+	.main:
+		mov si, BOOT_NOTIFY
+		call bios_print
 
-	mov ax, 0x0201
-	mov cx, 0x0002
-	mov dx, 0x0080	
+		call disk_load
 
-	mov bx, 0x0000
-	mov es, bx
-	mov bx, 0x1000
-
-	int 0x13
-
-	pop es
-	pop cx
-	pop bx
-	pop ax
-	
-	ret
+		jmp protectedMode_switching
 
 
-protectedSwitch:
-	cli
+BOOT_NOTIFY: db "Welcome! You are in the Real-Mode now!", 13, 10, 0
 
-	lgdt [gdtr]
-
-	mov eax, cr0
-	or eax, 0x01
-	mov cr0, eax
-
-	call 0x1000
-
-biosPrint:
-	push ax
-
-	mov ah, 0x0E
-	.loop: lodsb
-		or al, al
-		jz .return
-		int 0x10
-		jmp .loop
-	
-	.return:
-		pop ax
-		ret
-
-bootData:
-	msg db "Welcome!", 13, 10, 0
-	gdtr: 
-		dw 0xffff ; for limit
-		dd 0x0000 ; for base	
-
-	times 510-($-$$) db 0
-	dw 0xAA55		; boot signature
+times 510-($-$$) db 0
+dw 0xAA55   ; boot signature
