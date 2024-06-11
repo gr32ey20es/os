@@ -1,12 +1,23 @@
+#include <stdint.h>
+#include "../lib/vga.h"
+
 void main()
 {
-char KERNEL_NOTIFY[40] = "Welcome! This is the kernel's message!  ";
-unsigned char* vga = (unsigned char*) 0xb8000;
-
-	for (int i=0; *(KERNEL_NOTIFY + i) != '\0'; i++) 
-	{
-		*(vga + 2*i) = *(KERNEL_NOTIFY + i);
-		*(vga + 2*i + 1) = i;
-	}
+	reset();
 	while(1);
 }
+
+
+
+/*
+ * I have no idea that a function must be 
+ * below the main function to be executed.
+ *
+ * Before the function returns, RIP points to 
+ * the next instruction of the boot process 
+ * (0x7c__) instead of the kernel process ???
+ *
+ */
+
+#include "../lib/port.c"
+#include "../lib/vga.c"

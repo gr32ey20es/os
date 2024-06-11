@@ -8,7 +8,7 @@ DISK_IMG    = ${BUILD_DIR}/disk.img
 
 define qemu
 	qemu-system-x86_64 \
-	-drive format=raw,file=${DISK_IMG} \
+	-drive format=raw,file=${DISK_IMG},index=0,media=disk \
 	$1
 endef
 
@@ -33,7 +33,7 @@ dd: ld
 	dd if=${BUILD_DIR}/${BOOT_PATH}.bin   of=${DISK_IMG} \
 	   bs=512 count=1 seek=0 conv=notrunc;\
 	dd if=${BUILD_DIR}/${KERNEL_PATH}.bin of=${DISK_IMG} \
-	   bs=512 count=1 seek=1 conv=notrunc;
+	   bs=512 count=2 seek=1 conv=notrunc;
 
 
 ld: gcc fasm
